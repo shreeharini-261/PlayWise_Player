@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <!-- Left Column - Playlist and Controls -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i data-feather="list" class="me-2"></i>
+                    Current Playlist
+                    <span class="badge bg-primary ms-2">{{ songs|length }} songs</span>
+                </h5>
+                
+                <div class="btn-group" role="group">
+                    <a href="{{ url_for('reverse_playlist') }}" class="btn btn-outline-secondary btn-sm">
+                        <i data-feather="rotate-ccw" class="me-1"></i>
+                        Reverse
+                    </a>
+                    <a href="{{ url_for('undo_play') }}" class="btn btn-outline-warning btn-sm">
+                        <i data-feather="corner-up-left" class="me-1"></i>
+                        Undo Play
+                    </a>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                {% if songs %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Title</th>
+                                    <th>Artist</th>
+                                    <th>Duration</th>
+                                    <th>Rating</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for song in songs %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    <td>
+                                        <strong>{{ song.title }}</strong>
+                                    </td>
+                                    <td>{{ song.artist }}</td>
+                                    <td>
+                                        <span class="badge bg-info">{{ song.get_duration_formatted() }}</span>
+                                    </td>
+                                    <td>
+                                        {% if song.rating > 0 %}
+                                            <div class="text-warning">
+                                                {% for i in range(song.rating) %}★{% endfor %}
+                                                {% for i in range(5 - song.rating) %}☆{% endfor %}
+                                            </div>
+                                        {% else %}
+                                            <span class="text-muted">Unrated</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{{ url_for('play_song', index=loop.index0) }}" 
+                                               class="btn btn-success btn-sm" title="Play">
+                                                <i data-feather="play"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-outline-primary btn-sm" 
+                                                    data-bs-toggle="modal" data-bs-target="#rateModal{{ loop.index0 }}" title="Rate">
+                                                <i data-feather="star"></i>
+                                            </button>
+                                            <a href="{{ url_for('delete_song', index=loop.index0) }}" 
+                                               class="btn btn-danger btn-sm" title="Delete"
+                                               onclick="return confirm('Delete this song?')">
+                                                <i data-feather="trash-2"></i>
+                                            </a>
+                                        </div>
+                                        
+                                        <!-- Rate Song Modal -->
+                                        <div class="modal fade" id="rateModal{{ loop.index0 }}" tabindex="-1">
+                                            <div class="modal-dialog modal-sm">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h6 class="modal-title">Rate Song</h6>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <form method="POST" action="{{ url_for('rate_song') }}">
+                                                        <div class="modal-body">
+                                                            <input type="hidden" name="song_id" value="{{ song.id }}">
+                                                            <div class="mb-3">
+                                                                <label class="form-label">Rating (1-5 stars)</label>
+                                                                <select name="rating" class="form-select" required>
+                                                                    <option value="">Select rating</option>
+                                                                    {% for i in range(1, 6) %}
+                                                                        <option value="{{ i }}" {% if song.rating == i %}selected{% endif %}>
+                                                                            {{ i }} Star{{ 's' if i > 1 else '' }}
+                                                                        </option>
+                                                                    {% endfor %}
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="submit" class="btn btn-primary btn-sm">Rate Song</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i data-feather="music" style="width: 64px; height: 64px;" class="text-muted mb-3"></i>
+                        <h5 class="text-muted">No songs in playlist</h5>
+                        <p class="text-muted">Add your first song to get started!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Duration Statistics -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i data-feather="bar-chart-2" class="me-2"></i>
+                    Duration Statistics (Min/Max Heap Demo)
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <h4 class="text-primary">{{ (duration_stats.total_duration // 60) | int }}:{{ '%02d' | format(duration_stats.total_duration % 60) }}</h4>
+                            <small class="text-muted">Total Duration</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <h4 class="text-success">
+                                {% if duration_stats.shortest_song %}
+                                    {{ (duration_stats.shortest_song // 60) | int }}:{{ '%02d' | format(duration_stats.shortest_song % 60) }}
+                                {% else %}
+                                    --:--
+                                {% endif %}
+                            </h4>
+                            <small class="text-muted">Shortest Song</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <h4 class="text-warning">
+                                {% if duration_stats.longest_song %}
+                                    {{ (duration_stats.longest_song // 60) | int }}:{{ '%02d' | format(duration_stats.longest_song % 60) }}
+                                {% else %}
+                                    --:--
+                                {% endif %}
+                            </h4>
+                            <small class="text-muted">Longest Song</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <h4 class="text-info">
+                                {% if duration_stats.average_duration %}
+                                    {{ (duration_stats.average_duration // 60) | int }}:{{ '%02d' | format(duration_stats.average_duration % 60) }}
+                                {% else %}
+                                    --:--
+                                {% endif %}
+                            </h4>
+                            <small class="text-muted">Average Duration</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column - Controls and Tools -->
+    <div class="col-lg-4">
+        <!-- Add Song Form -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i data-feather="plus" class="me-2"></i>
+                    Add New Song
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('add_song') }}">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title</label>
+                        <input type="text" class="form-control" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="artist" class="form-label">Artist</label>
+                        <input type="text" class="form-control" name="artist" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="duration" class="form-label">Duration (seconds)</label>
+                        <input type="number" class="form-control" name="duration" min="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="rating" class="form-label">Rating (optional)</label>
+                        <select name="rating" class="form-select">
+                            <option value="0">No rating</option>
+                            {% for i in range(1, 6) %}
+                                <option value="{{ i }}">{{ i }} Star{{ 's' if i > 1 else '' }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i data-feather="plus" class="me-2"></i>
+                        Add Song
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Artist Blocklist -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i data-feather="shield" class="me-2"></i>
+                    Artist Blocklist (HashSet Demo)
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('block_artist') }}" class="mb-3">
+                    <div class="input-group">
+                        <input type="text" class="form-control" name="artist" placeholder="Artist to block" required>
+                        <button type="submit" class="btn btn-danger">
+                            <i data-feather="shield"></i>
+                        </button>
+                    </div>
+                </form>
+                
+                {% if blocked_artists %}
+                    <div class="blocked-artists">
+                        <small class="text-muted">Blocked Artists:</small>
+                        {% for artist in blocked_artists %}
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <span class="badge bg-danger">{{ artist }}</span>
+                                <a href="{{ url_for('unblock_artist', artist=artist) }}" 
+                                   class="btn btn-outline-success btn-sm">
+                                    <i data-feather="check"></i>
+                                </a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Search Functions -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i data-feather="search" class="me-2"></i>
+                    Search (HashMap & BST Demo)
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('search') }}">
+                    <div class="mb-3">
+                        <label class="form-label">Search Type</label>
+                        <select name="search_type" class="form-select" required>
+                            <option value="title">By Title (HashMap O(1))</option>
+                            <option value="rating">By Rating (BST O(log n))</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Query</label>
+                        <input type="text" class="form-control" name="query" required>
+                    </div>
+                    <button type="submit" class="btn btn-outline-primary w-100">
+                        <i data-feather="search" class="me-2"></i>
+                        Search
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Sorting Options -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i data-feather="sort-asc" class="me-2"></i>
+                    Sort Playlist
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('sort_playlist') }}">
+                    <div class="mb-3">
+                        <label class="form-label">Sort By</label>
+                        <select name="criteria" class="form-select" required>
+                            <option value="title">Title</option>
+                            <option value="artist">Artist</option>
+                            <option value="duration">Duration</option>
+                            <option value="rating">Rating</option>
+                            <option value="added_at">Recently Added</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Algorithm</label>
+                        <select name="algorithm" class="form-select" required>
+                            <option value="merge">Merge Sort O(n log n)</option>
+                            <option value="quick">Quick Sort O(n log n)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-outline-info w-100">
+                        <i data-feather="sort-asc" class="me-2"></i>
+                        Sort Playlist
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Move Song -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i data-feather="move" class="me-2"></i>
+                    Move Song
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('move_song') }}">
+                    <div class="mb-3">
+                        <label class="form-label">From Position</label>
+                        <input type="number" class="form-control" name="from_index" min="0" max="{{ songs|length - 1 }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">To Position</label>
+                        <input type="number" class="form-control" name="to_index" min="0" max="{{ songs|length - 1 }}" required>
+                    </div>
+                    <button type="submit" class="btn btn-outline-warning w-100" {% if songs|length == 0 %}disabled{% endif %}>
+                        <i data-feather="move" class="me-2"></i>
+                        Move Song
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-refresh duration stats every 5 seconds
+setInterval(function() {
+    fetch('/api/duration_stats')
+        .then(response => response.json())
+        .then(data => {
+            // Update duration stats if needed
+            console.log('Duration stats updated:', data);
+        })
+        .catch(error => console.error('Error fetching stats:', error));
+}, 5000);
+</script>
+{% endblock %}

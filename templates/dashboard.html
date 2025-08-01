@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - PlayWise{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i data-feather="activity" class="me-2"></i>
+        Live Dashboard
+    </h2>
+    <button class="btn btn-outline-primary" onclick="refreshData()">
+        <i data-feather="refresh-cw" class="me-2"></i>
+        Refresh Data
+    </button>
+</div>
+
+<div class="row">
+    <!-- System Overview -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i data-feather="info" class="me-2"></i>
+                    System Overview
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-6">
+                        <div class="stat-item mb-3">
+                            <h3 class="text-primary">{{ snapshot.total_songs }}</h3>
+                            <small class="text-muted">Total Songs</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="stat-item mb-3">
+                            <h3 class="text-info">
+                                {{ (snapshot.total_duration // 60) | int }}:{{ '%02d' | format(snapshot.total_duration % 60) }}
+                            </h3>
+                            <small class="text-muted">Total Duration</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <div class="stat-item">
+                            <h4 class="text-success">
+                                {% if snapshot.duration_stats.shortest_song %}
+                                    {{ (snapshot.duration_stats.shortest_song // 60) | int }}:{{ '%02d' | format(snapshot.duration_stats.shortest_song % 60) }}
+                                {% else %}
+                                    --:--
+                                {% endif %}
+                            </h4>
+                            <small class="text-muted">Shortest</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-item">
+                            <h4 class="text-warning">
+                                {% if snapshot.duration_stats.longest_song %}
+                                    {{ (snapshot.duration_stats.longest_song // 60) | int }}:{{ '%02d' | format(snapshot.duration_stats.longest_song % 60) }}
+                                {% else %}
+                                    --:--
+                                {% endif %}
+                            </h4>
+                            <small class="text-muted">Longest</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-item">
+                            <h4 class="text-info">
+                                {% if snapshot.duration_stats.average_duration %}
+                                    {{ (snapshot.duration_stats.average_duration // 60) | int }}:{{ '%02d' | format(snapshot.duration_stats.average_duration % 60) }}
+                                {% else %}
+                                    --:--
+                                {% endif %}
+                            </h4>
+                            <small class="text-muted">Average</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rating Distribution -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i data-feather="star" class="me-2"></i>
+                    Rating Distribution (BST)
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if snapshot.rating_distribution %}
+                    <div class="rating-chart">
+                        {% for rating in range(1, 6) %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>
+                                    {% for i in range(rating) %}★{% endfor %}
+                                    <span class="text-muted">({{ rating }} star{{ 's' if rating > 1 else '' }})</span>
+                                </span>
+                                <span class="badge bg-primary">
+                                    {{ snapshot.rating_distribution.get(rating, 0) }} songs
+                                </span>
+                            </div>
+                            <div class="progress mb-3" style="height: 8px;">
+                                <div class="progress-bar" role="progressbar" 
+                                     style="width: {% if snapshot.total_songs > 0 %}{{ (snapshot.rating_distribution.get(rating, 0) / snapshot.total_songs * 100) | int }}{% else %}0{% endif %}%">
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-3">
+                        <i data-feather="star" class="text-muted mb-2"></i>
+                        <p class="text-muted">No rated songs yet</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Top 5 Longest Songs -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i data-feather="trending-up" class="me-2"></i>
+                    Top 5 Longest Songs
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if snapshot.longest_songs %}
+                    <div class="list-group list-group-flush">
+                        {% for song in snapshot.longest_songs %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ song.title }}</h6>
+                                    <small class="text-muted">{{ song.artist }}</small>
+                                </div>
+                                <span class="badge bg-info">
+                                    {{ (song.duration // 60) | int }}:{{ '%02d' | format(song.duration % 60) }}
+                                </span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-3">
+                        <i data-feather="music" class="text-muted mb-2"></i>
+                        <p class="text-muted">No songs available</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Playback History -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i data-feather="clock" class="me-2"></i>
+                    Recent Playback History (Stack)
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if snapshot.recent_history %}
+                    <div class="list-group list-group-flush">
+                        {% for song in snapshot.recent_history %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ song.title }}</h6>
+                                    <small class="text-muted">{{ song.artist }}</small>
+                                </div>
+                                <small class="text-muted">
+                                    <i data-feather="play" style="width: 14px; height: 14px;"></i>
+                                    {{ song.play_count }} plays
+                                </small>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-3">
+                        <i data-feather="clock" class="text-muted mb-2"></i>
+                        <p class="text-muted">No playback history</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Blocked Artists -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i data-feather="shield" class="me-2"></i>
+                    Blocked Artists (HashSet)
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if snapshot.blocked_artists %}
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for artist in snapshot.blocked_artists %}
+                            <span class="badge bg-danger">{{ artist }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-3">
+                        <i data-feather="shield" class="text-muted mb-2"></i>
+                        <p class="text-muted">No blocked artists</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Metrics -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i data-feather="zap" class="me-2"></i>
+                    Performance Metrics
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if snapshot.performance_metrics %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Operation</th>
+                                    <th>Avg Time</th>
+                                    <th>Calls</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for operation, metrics in snapshot.performance_metrics.items() %}
+                                    <tr>
+                                        <td><code>{{ operation }}</code></td>
+                                        <td>{{ '%.4f' | format(metrics.average_time) }}s</td>
+                                        <td>{{ metrics.total_calls }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-3">
+                        <i data-feather="zap" class="text-muted mb-2"></i>
+                        <p class="text-muted">No performance data yet</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Data Structure Complexity Information -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i data-feather="book" class="me-2"></i>
+                    Data Structure Complexity Reference
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for ds_name, operations in complexity_info.data_structures.items() %}
+                        <div class="col-lg-4 mb-3">
+                            <h6 class="text-primary">{{ ds_name }}</h6>
+                            <ul class="list-unstyled small">
+                                {% for op_name, complexity in operations.items() %}
+                                    <li>
+                                        <code>{{ op_name }}</code>: 
+                                        <span class="text-muted">{{ complexity }}</span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <hr>
+                
+                <h6 class="text-primary">Sorting Algorithms</h6>
+                <div class="row">
+                    {% for alg_name, complexity in complexity_info.sorting_algorithms.items() %}
+                        <div class="col-md-6">
+                            <code>{{ alg_name }}</code>: <span class="text-muted">{{ complexity }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function refreshData() {
+    fetch('/api/snapshot')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Dashboard data refreshed:', data);
+            location.reload(); // Simple refresh for now
+        })
+        .catch(error => {
+            console.error('Error refreshing data:', error);
+            alert('Failed to refresh data');
+        });
+}
+
+// Auto-refresh every 30 seconds
+setInterval(refreshData, 30000);
+</script>
+{% endblock %}

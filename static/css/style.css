@@ -1,0 +1,193 @@
+/* Custom styles for PlayWise Music Player */
+
+/* Stat items styling */
+.stat-item {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    background: var(--bs-dark);
+    border: 1px solid var(--bs-border-color);
+}
+
+.stat-item h3, .stat-item h4 {
+    margin-bottom: 0.25rem;
+    font-weight: 600;
+}
+
+/* Rating stars styling */
+.rating-chart .progress {
+    background-color: var(--bs-gray-800);
+}
+
+/* Song table hover effects */
+.table-hover tbody tr:hover {
+    background-color: var(--bs-gray-800);
+}
+
+/* Button group styling for song actions */
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+}
+
+/* Modal improvements */
+.modal-content {
+    background-color: var(--bs-dark);
+    border: 1px solid var(--bs-border-color);
+}
+
+/* Navbar brand styling */
+.navbar-brand {
+    font-size: 1.5rem;
+}
+
+.navbar-brand .badge {
+    font-size: 0.7rem;
+}
+
+/* Card styling */
+.card {
+    background-color: var(--bs-dark);
+    border: 1px solid var(--bs-border-color);
+}
+
+.card-header {
+    background-color: var(--bs-gray-800);
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+/* List group styling */
+.list-group-item {
+    background-color: var(--bs-dark);
+    border-color: var(--bs-border-color);
+}
+
+.list-group-item:hover {
+    background-color: var(--bs-gray-800);
+}
+
+/* Blocked artists styling */
+.blocked-artists .badge {
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+}
+
+/* Performance table styling */
+.table-sm code {
+    background-color: var(--bs-gray-700);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.85rem;
+}
+
+/* Progress bar custom colors */
+.progress-bar {
+    background: linear-gradient(45deg, var(--bs-primary), var(--bs-info));
+}
+
+/* Alert styling */
+.alert {
+    border: none;
+    border-radius: 0.5rem;
+}
+
+/* Footer styling */
+footer {
+    margin-top: auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .btn-group-sm .btn {
+        padding: 0.125rem 0.25rem;
+    }
+    
+    .stat-item h3, .stat-item h4 {
+        font-size: 1.25rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+}
+
+/* Loading states */
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Custom badge colors for duration */
+.badge.bg-info {
+    background-color: var(--bs-info) !important;
+}
+
+/* Feather icon adjustments */
+[data-feather] {
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+}
+
+/* Form styling improvements */
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* Rating stars in table */
+.text-warning {
+    color: #ffc107 !important;
+}
+
+/* Complexity reference styling */
+.list-unstyled code {
+    background-color: var(--bs-gray-700);
+    padding: 0.1rem 0.3rem;
+    border-radius: 0.2rem;
+    font-size: 0.8rem;
+}
+
+/* Dashboard specific styles */
+.rating-chart .d-flex {
+    margin-bottom: 0.5rem;
+}
+
+.rating-chart .progress {
+    height: 6px;
+}
+
+/* Animation for refresh button */
+.btn:active .feather {
+    animation: spin 0.5s linear;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Empty state styling */
+.text-center i[data-feather] {
+    opacity: 0.5;
+}
+
+/* Performance metrics table */
+.table th {
+    border-top: none;
+    border-bottom: 2px solid var(--bs-border-color);
+    font-weight: 600;
+}
+
+/* Card shadows for depth */
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.3);
+}
+
+/* Input group styling */
+.input-group .btn {
+    border-left: none;
+}
+
+.input-group .form-control:focus {
+    border-right: 1px solid var(--bs-primary);
+}
