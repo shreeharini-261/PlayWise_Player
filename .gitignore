@@ -1,0 +1,7 @@
+# Ignore Replit-specific files
+.replit
+replit.*
+pyproject.toml
+uv.lock
+# Ignore virtual environment
+venv/
